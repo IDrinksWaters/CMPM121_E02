@@ -21,6 +21,14 @@ type ShiftResults = {
   supplyBalance: number;
 };
 
+//new type use for displays
+
+type SupplyDisplayRecord = {
+  label: string;
+  value: number;
+  color: string;
+};
+
 //calculate the results of a shift based on the number of people assigned to production (not drawing anything yet)
 function calculateShiftResults(assignedPeople: number): ShiftResults {
   const totalSupplyProduced = assignedPeople * suppliesPerProducer;
@@ -62,26 +70,43 @@ function drawSupplyTotals(results: ShiftResults) {
     18,
     76,
   );
-  drawingContext.fillText(
-    `Supply produced: ${results.totalSupplyProduced}`,
-    18,
-    102,
-  );
+  drawingContext.font = "14px system-ui";
 
-  drawingContext.fillStyle = "#27766b";
+  // FOR A3--------- > now instead of two separate renderers for supply produced and consumed, use supplyDisplays to do the work
+  const supplyDisplays: SupplyDisplayRecord[] = [
+    {
+      label: "Supply produced",
+      value: results.totalSupplyProduced,
+      color: "#27766b",
+    },
+    {
+      label: "Supply consumption",
+      value: results.supplyConsumption,
+      color: "#a44d23",
+    },
+  ];
 
-  //--------IMPORTANT, this is to make sure the width match (ex: 6 supplies is 6 x 14 = 84px)
-  drawingContext.fillRect(18, 110, results.totalSupplyProduced * 14, 20);
+  for (let index = 0; index < supplyDisplays.length; index++) {
+    const display = supplyDisplays[index];
 
-  drawingContext.fillStyle = "#233e43";
-  drawingContext.fillText(
-    `Supply consumption: ${results.supplyConsumption}`,
-    18,
-    154,
-  );
+    const labelY = 102 + index * 52;
+    const barY = labelY + 8;
 
-  drawingContext.fillStyle = "#a44d23";
-  drawingContext.fillRect(18, 162, results.supplyConsumption * 14, 20);
+    drawingContext.fillStyle = "#233e43";
+    drawingContext.fillText(
+      `${display.label}: ${display.value}`,
+      18,
+      labelY,
+    );
+
+    drawingContext.fillStyle = display.color;
+    drawingContext.fillRect(
+      18,
+      barY,
+      display.value * 14,
+      20,
+    );
+  }
 }
 
 //(DOM renderer) presents the same calculated results as text
