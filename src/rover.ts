@@ -17,10 +17,12 @@ let x = 2;
 let y = 2;
 let direction = 0;
 
-//A1---defines what a command must look like, for directions
 type Command = {
+  label: string;
   execute: () => void;
 };
+
+const commandQueue: Command[] = [];
 
 type DirectionRecord = {
   name: string;
@@ -28,19 +30,20 @@ type DirectionRecord = {
   dy: number;
 };
 
-//A1---same command but for turning right
+//B3---now each of them holds a label so queueing up commands becomes easier to understand, logic is unchanged.
 const rightCommand: Command = {
+  label: "Right",
   execute: () => {
-    direction = (direction + 1) % 4;
+    direction = (direction + 1) % directions.length;
     drawRover();
   },
 };
 
 const forwardCommand: Command = {
+  label: "Forward",
   execute: () => {
     const currentDirection = directions[direction];
 
-    //MATH: imagine rover at x = 2 and face east, so that's dx = 1, 2+1 is 3, and min(4,3) returns 3, so rover moves to column 3, same logic for y
     x = Math.max(0, Math.min(4, x + currentDirection.dx));
     y = Math.max(0, Math.min(4, y + currentDirection.dy));
 
@@ -48,10 +51,39 @@ const forwardCommand: Command = {
   },
 };
 
-//A1---now we use invokeCommand to invoke forward and right command, as it checks for type Command and make sure it fits the data structure.
-function invokeCommand(command: Command) {
-  command.execute();
+function enqueueCommand(command: Command) {
+  commandQueue.push(command);
+  renderQueue();
 }
+
+//B3---uses clearChildren to rebuild the list, and create a list item for each command to add them to webpage
+function renderQueue() {
+  const queueList = document.querySelector<HTMLOListElement>("#rover-pending")!;
+
+  queueList.replaceChildren();
+
+  for (const command of commandQueue) {
+    const item = document.createElement("li");
+    item.textContent = command.label;
+    queueList.appendChild(item);
+  }
+}
+
+//B3--- rover run and clear
+document.querySelector<HTMLButtonElement>("#rover-run")!.onclick = () => {
+  while (commandQueue.length > 0) {
+    const command = commandQueue.shift()!;
+    command.execute();
+  }
+
+  renderQueue();
+};
+
+document.querySelector<HTMLButtonElement>("#rover-clear")!.onclick = () => {
+  commandQueue.length = 0;
+
+  renderQueue();
+};
 
 function drawRover() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -84,16 +116,18 @@ function drawRover() {
 }
 
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  invokeCommand(forwardCommand);
+  enqueueCommand(forwardCommand);
 };
 
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  invokeCommand(rightCommand);
+  enqueueCommand(rightCommand);
 };
+
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   direction = 0;
   drawRover();
 };
+
 drawRover();
