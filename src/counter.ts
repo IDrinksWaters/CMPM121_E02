@@ -6,6 +6,8 @@ type ShieldSnapshot = {
   missingCharge: number;
 };
 
+const shieldEvents = new EventTarget();
+
 const canvas = document.querySelector<HTMLCanvasElement>("#counter-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>(
@@ -52,6 +54,12 @@ function drawMeter(snapshot: ShieldSnapshot) {
     `Shield charge: ${snapshot.charge} / ${snapshot.capacity}`;
 }
 
+//C2--- listens for event "shield-change" and update it to canvas and readout
+shieldEvents.addEventListener("shield-change", (event) => {
+  const snapshot = (event as CustomEvent<ShieldSnapshot>).detail;
+  drawMeter(snapshot);
+});
+
 function updateStats(snapshot: ShieldSnapshot) {
   panelUpdates++;
   diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
@@ -72,7 +80,12 @@ function setCount(next: number) {
   count = bounded;
 
   const snapshot = createShieldSnapshot(count);
-  drawMeter(snapshot);
+
+  shieldEvents.dispatchEvent(
+    new CustomEvent<ShieldSnapshot>("shield-change", { // does not call drawMeter(snapshot) but instead shield-change now
+      detail: snapshot,
+    }),
+  );
 
   if (panel) updateStats(snapshot);
 }
@@ -97,4 +110,10 @@ document.querySelector<HTMLButtonElement>("#counter-close")!.onclick = () => {
   panel.remove();
   panel = null;
 };
-drawMeter(createShieldSnapshot(count));
+
+//C2---since it's wired to a new event, we'll replace the call with shieldEvents
+shieldEvents.dispatchEvent(
+  new CustomEvent<ShieldSnapshot>("shield-change", {
+    detail: createShieldSnapshot(count),
+  }),
+);
