@@ -3,7 +3,14 @@ export {};
 const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
-const headings = ["North", "East", "South", "West"];
+
+//B1---depending on the direction we're facing, we can increase or decraese x / y by 1, dx and dy for "difference" from the local coordinate.
+const directions: DirectionRecord[] = [
+  { name: "North", dx: 0, dy: -1 },
+  { name: "East", dx: 1, dy: 0 },
+  { name: "South", dx: 0, dy: 1 },
+  { name: "West", dx: -1, dy: 0 },
+];
 
 //rover defaults to (2,2)
 let x = 2;
@@ -13,6 +20,12 @@ let direction = 0;
 //A1---defines what a command must look like, for directions
 type Command = {
   execute: () => void;
+};
+
+type DirectionRecord = {
+  name: string;
+  dx: number;
+  dy: number;
 };
 
 //A1---same command but for turning right
@@ -25,11 +38,11 @@ const rightCommand: Command = {
 
 const forwardCommand: Command = {
   execute: () => {
-    // coordinate is not the same in math, up is -1 for y and x is the same. Top left is the origin.
-    if (direction === 0) y = Math.max(0, y - 1);
-    if (direction === 1) x = Math.min(4, x + 1);
-    if (direction === 2) y = Math.min(4, y + 1);
-    if (direction === 3) x = Math.max(0, x - 1);
+    const currentDirection = directions[direction];
+
+    //MATH: imagine rover at x = 2 and face east, so that's dx = 1, 2+1 is 3, and min(4,3) returns 3, so rover moves to column 3, same logic for y
+    x = Math.max(0, Math.min(4, x + currentDirection.dx));
+    y = Math.max(0, Math.min(4, y + currentDirection.dy));
 
     drawRover();
   },
@@ -66,7 +79,7 @@ function drawRover() {
   ctx.fill();
   ctx.restore();
   readout.textContent = `Position: (${x}, ${y}) · Facing: ${
-    headings[direction]
+    directions[direction].name //B2---name is now part of the direction itself
   }`;
 }
 
